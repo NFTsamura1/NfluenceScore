@@ -23,10 +23,10 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
 
-  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.18; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.22; }
 
   nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 24px;
     background: rgba(10,10,10,0.88); backdrop-filter: blur(16px);
@@ -47,7 +47,7 @@
   .corner-green { color: rgba(74,222,128,0.28); }
   @media (min-width: 900px) { .corner { display: block; } }
 
-  main { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 560px; padding-top: 104px; }
+  main { position: relative; z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 560px; padding-top: 104px; }
 
   .terminal { font-family: monospace; font-size: 11px; color: rgba(255,255,255,0.2); line-height: 1.7; margin-bottom: 28px; width: 100%; user-select: none; }
   .t-comment { color: rgba(255,255,255,0.15); }
@@ -249,19 +249,31 @@
 (function(){
   const c = document.getElementById("matrixCanvas");
   const ctx = c.getContext("2d");
-  const chars = "01アイウエオカキクケコNFLUENCE@#$%&";
-  const fs = 13;
-  let drops = [];
-  function resize(){ c.width=window.innerWidth; c.height=window.innerHeight; drops=Array(Math.floor(c.width/fs)).fill(1); }
-  resize(); window.addEventListener("resize", resize);
+  const chars = "01アイウエオカキクケコNFLUENCE@#$%&10".split("");
+  const fs = 14;
+  let cols, drops;
+  function init(){
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    cols = Math.floor(c.width / fs);
+    drops = new Array(cols).fill(0).map(() => Math.random() * -100);
+  }
+  init();
+  window.addEventListener("resize", init);
   function draw(){
-    ctx.fillStyle="rgba(10,10,10,0.07)"; ctx.fillRect(0,0,c.width,c.height);
-    ctx.fillStyle="rgba(255,255,255,0.08)"; ctx.font=fs+"px monospace";
-    drops.forEach((y,i)=>{
-      ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,y*fs);
-      if(y*fs>c.height&&Math.random()>0.975) drops[i]=0;
-      drops[i]++;
-    });
+    ctx.fillStyle = "rgba(10,10,10,0.06)";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.font = fs + "px monospace";
+    for(let i = 0; i < cols; i++){
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      const y = drops[i] * fs;
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillText(char, i * fs, y);
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*fs, y - fs);
+      if(y > c.height && Math.random() > 0.97) drops[i] = 0;
+      drops[i] += 0.22;
+    }
     requestAnimationFrame(draw);
   }
   draw();
@@ -363,6 +375,7 @@ async function analyze(){
 }
 
 function renderResults(handle,scores,raw){
+  _lastHandle=handle;_lastScores=scores;_lastRaw=raw;_lastAiText="";
   const tier=getTier(scores.overall);
   const circ=2*Math.PI*80;
   const offset=circ-(scores.overall/100)*circ;
@@ -449,7 +462,7 @@ async function fetchAiAnalysis(handle,scores,profile){
     const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({handle,scores,profile})});
     if(!res.ok) throw new Error();
     const d=await res.json();
-    if(el){el.className="ai-text";el.textContent=d.analysis||"could not generate analysis.";}
+    if(el){el.className="ai-text";el.textContent=d.analysis||"could not generate analysis.";_lastAiText=el.textContent;}
   }catch{ if(el) el.textContent="could not generate AI analysis."; }
 }
 
@@ -459,17 +472,6 @@ function resetScan(){
 
 // Store scan data for card
 let _lastHandle="",_lastScores=null,_lastRaw=null,_lastAiText="";
-const _origRender=renderResults;
-function renderResults(handle,scores,raw){
-  _lastHandle=handle;_lastScores=scores;_lastRaw=raw;_lastAiText="";
-  _origRender(handle,scores,raw);
-}
-const _origAi=fetchAiAnalysis;
-async function fetchAiAnalysis(handle,scores,profile){
-  await _origAi(handle,scores,profile);
-  const el=document.getElementById("aiText");
-  if(el) _lastAiText=el.textContent||"";
-}
 
 function roundRect(ctx,x,y,w,h,r){
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
