@@ -508,21 +508,21 @@ async function downloadCard(){
   // ── HEADER (y: 30–90) ──
   await new Promise(res=>{
     const img=new Image();
-    img.onload=()=>{ctx.drawImage(img,44,30,48,48);res();};
+    img.onload=()=>{ctx.drawImage(img,56,42,48,48);res();};
     img.onerror=res;
     img.src=document.querySelector(".nav-logo img").src;
   });
-  ctx.fillStyle="#fff";ctx.font="900 24px Inter,sans-serif";ctx.fillText("NFLUENCE",102,60);
-  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="500 11px monospace";ctx.fillText("SCORE v2",102,78);
+  ctx.fillStyle="#fff";ctx.font="900 24px Inter,sans-serif";ctx.fillText("NFLUENCE",114,72);
+  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="500 11px monospace";ctx.fillText("SCORE v2",114,90);
   ctx.fillStyle="rgba(255,255,255,0.2)";ctx.font="500 12px monospace";ctx.textAlign="right";
-  ctx.fillText("nfluenc3.com",W-44,60);ctx.textAlign="left";
+  ctx.fillText("nfluenc3.com",W-56,72);ctx.textAlign="left";
 
   // Divider
   ctx.strokeStyle="rgba(255,255,255,0.08)";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(44,100);ctx.lineTo(W-44,100);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(56,116);ctx.lineTo(W-56,116);ctx.stroke();
 
   // ── PROFILE ROW (y: 118–240) ──
-  const ax=56,ay=108,ar=62;
+  const ax=56,ay=130,ar=62;
   if(_lastRaw.profile_image_url){
     await new Promise(res=>{
       const img=new Image();img.crossOrigin="anonymous";
@@ -557,7 +557,7 @@ async function downloadCard(){
     ctx.fillText(bio,tx,ay+108);
   }
   // Tier circle
-  const tcx=W-130,tcy=ay+56;
+  const tcx=W-130,tcy=ay+62;
   ctx.shadowColor=tc;ctx.shadowBlur=18;
   ctx.strokeStyle=tc;ctx.lineWidth=2.5;
   ctx.beginPath();ctx.arc(tcx,tcy,60,0,Math.PI*2);ctx.stroke();
@@ -569,7 +569,7 @@ async function downloadCard(){
 
   // Divider 2
   ctx.strokeStyle="rgba(255,255,255,0.06)";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(44,252);ctx.lineTo(W-44,252);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(56,282);ctx.lineTo(W-56,282);ctx.stroke();
 
   // ── STATS ROW (y: 265–335) ──
   const stats=[
@@ -583,26 +583,26 @@ async function downloadCard(){
   stats.forEach((s,i)=>{
     const sx2=44+i*sw2;
     ctx.fillStyle="rgba(255,255,255,0.03)";
-    roundRect(ctx,sx2,265,sw2-10,68,10);ctx.fill();
+    roundRect(ctx,sx2,296,sw2-10,68,10);ctx.fill();
     ctx.strokeStyle="rgba(255,255,255,0.07)";ctx.lineWidth=1;
-    roundRect(ctx,sx2,265,sw2-10,68,10);ctx.stroke();
+    roundRect(ctx,sx2,296,sw2-10,68,10);ctx.stroke();
     ctx.fillStyle=s.l==="TIER"?tc:"#fff";
     ctx.font=(s.l==="TIER"?"800 17px":"800 22px")+" Inter,sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(s.v,sx2+(sw2-10)/2,265+40);
+    ctx.fillText(s.v,sx2+(sw2-10)/2,296+40);
     ctx.fillStyle="rgba(255,255,255,0.22)";ctx.font="600 9px monospace";
-    ctx.fillText(s.l,sx2+(sw2-10)/2,265+57);
+    ctx.fillText(s.l,sx2+(sw2-10)/2,296+57);
     ctx.textAlign="left";
   });
 
   // Divider 3
   ctx.strokeStyle="rgba(255,255,255,0.06)";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(44,348);ctx.lineTo(W-44,348);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(56,380);ctx.lineTo(W-56,380);ctx.stroke();
   ctx.fillStyle="rgba(255,255,255,0.18)";ctx.font="600 9px monospace";ctx.letterSpacing="3px";
-  ctx.fillText("SCORE BREAKDOWN",44,368);
+  ctx.fillText("SCORE BREAKDOWN",56,400);
 
   // ── SCORE RING (y center: 490, left col) ──
-  const rx=150,ry=488,rr=88;
+  const rx=150,ry=510,rr=88;
   ctx.strokeStyle="rgba(255,255,255,0.06)";ctx.lineWidth=9;ctx.lineCap="round";
   ctx.beginPath();ctx.arc(rx,ry,rr,0,Math.PI*2);ctx.stroke();
   ctx.shadowColor=tc;ctx.shadowBlur=18;
@@ -616,7 +616,7 @@ async function downloadCard(){
 
   // ── METRICS (right col, y: 390–610) ──
   const mKeys=[{k:"reach",l:"REACH"},{k:"engagement",l:"ENGAGEMENT"},{k:"authority",l:"AUTHORITY"},{k:"consistency",l:"CONSISTENCY"},{k:"virality",l:"VIRALITY"}];
-  const mX=300,mY0=392,mGap=50,barW=W-44-mX-80;
+  const mX=300,mY0=416,mGap=50,barW=W-56-mX-80;
   mKeys.forEach((m,i)=>{
     const my=mY0+i*mGap;
     const val=_lastScores[m.k];
