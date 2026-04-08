@@ -522,7 +522,7 @@ async function downloadCard(){
   ctx.beginPath();ctx.moveTo(44,100);ctx.lineTo(W-44,100);ctx.stroke();
 
   // ── PROFILE ROW (y: 118–240) ──
-  const ax=44,ay=118,ar=48;
+  const ax=68,ay=118,ar=46;
   if(_lastRaw.profile_image_url){
     await new Promise(res=>{
       const img=new Image();img.crossOrigin="anonymous";
@@ -539,7 +539,7 @@ async function downloadCard(){
     ctx.fillStyle=tc;ctx.font="900 40px Inter,sans-serif";ctx.textAlign="center";
     ctx.fillText(_lastHandle[0].toUpperCase(),ax+ar,ay+ar+14);ctx.textAlign="left";
   }
-  const tx=ax+ar*2+20;
+  const tx=220;
   ctx.fillStyle="rgba(74,222,128,0.7)";
   ctx.beginPath();ctx.arc(tx+5,ay+14,4,0,Math.PI*2);ctx.fill();
   ctx.fillStyle="rgba(255,255,255,0.3)";ctx.font="600 10px monospace";
@@ -556,7 +556,7 @@ async function downloadCard(){
     ctx.fillText(bio,tx,ay+108);
   }
   // Tier circle
-  const tcx=W-120,tcy=ay+56;
+  const tcx=W-130,tcy=ay+56;
   ctx.shadowColor=tc;ctx.shadowBlur=18;
   ctx.strokeStyle=tc;ctx.lineWidth=2.5;
   ctx.beginPath();ctx.arc(tcx,tcy,60,0,Math.PI*2);ctx.stroke();
