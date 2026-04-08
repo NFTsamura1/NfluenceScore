@@ -164,6 +164,17 @@
     0%,100%{filter:drop-shadow(0 0 4px rgba(255,255,255,0.2)) drop-shadow(0 0 8px rgba(180,200,255,0.1))}
     50%{filter:drop-shadow(0 0 10px rgba(255,255,255,0.5)) drop-shadow(0 0 20px rgba(180,200,255,0.3))}
   }
+
+  .btn-download {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; border-radius: 14px; cursor: pointer;
+    font-weight: 800; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg,#fff,#e4e4e4,#fff); background-size: 200% auto;
+    color: #000; border: none; margin-bottom: 12px;
+    transition: opacity 0.15s, transform 0.1s; font-family: 'Inter', sans-serif;
+  }
+  .btn-download:hover:not(:disabled) { animation: shimmer 1.4s linear infinite; transform: translateY(-1px); }
+  .btn-download:disabled { opacity: 0.3; cursor: not-allowed; transform: none; animation: none; }
 </style>
 </head>
 <body>
@@ -420,6 +431,7 @@ function renderResults(handle,scores,raw){
       <div class="verdict" style="color:${tier.color}">${getVerdict(scores.overall)}</div>
     </div>
 
+    <button class="btn-download" id="downloadBtn" onclick="downloadCard()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD SHARE CARD</button>
     <div class="page-footer">NFLUENCE — WEB3 KOL MARKETING · SCORE BY SORSA</div>
   `;
 
@@ -444,6 +456,201 @@ async function fetchAiAnalysis(handle,scores,profile){
 function resetScan(){
   hide("resultsSection"); inp.value=""; btn.disabled=true; show("inputSection"); inp.focus();
 }
+
+// Store scan data for card
+let _lastHandle="",_lastScores=null,_lastRaw=null,_lastAiText="";
+const _origRender=renderResults;
+function renderResults(handle,scores,raw){
+  _lastHandle=handle;_lastScores=scores;_lastRaw=raw;_lastAiText="";
+  _origRender(handle,scores,raw);
+}
+const _origAi=fetchAiAnalysis;
+async function fetchAiAnalysis(handle,scores,profile){
+  await _origAi(handle,scores,profile);
+  const el=document.getElementById("aiText");
+  if(el) _lastAiText=el.textContent||"";
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+async function downloadCard(){
+  if(!_lastScores) return;
+  const dlBtn=document.getElementById("downloadBtn");
+  dlBtn.disabled=true;
+  dlBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> GENERATING...';
+
+  const W=1200,H=675;
+  const cv=document.createElement("canvas");
+  cv.width=W;cv.height=H;
+  const ctx=cv.getContext("2d");
+  const tier=getTier(_lastScores.overall);
+  const tc=tier.color;
+
+  // BG
+  ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,W,H);
+  const grd=ctx.createRadialGradient(180,120,0,180,120,700);
+  grd.addColorStop(0,tc+"22");grd.addColorStop(1,"transparent");
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle="rgba(255,255,255,0.025)";ctx.lineWidth=1;
+  for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // LOGO
+  await new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{ctx.drawImage(img,44,38,46,46);res();};
+    img.onerror=res;
+    img.src=document.querySelector(".nav-logo img").src;
+  });
+  ctx.fillStyle="#fff";ctx.font="900 22px Inter,sans-serif";ctx.fillText("NFLUENCE",100,68);
+  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="500 11px monospace";ctx.fillText("SCORE v2",100,86);
+  ctx.fillStyle="rgba(255,255,255,0.18)";ctx.font="500 12px monospace";ctx.textAlign="right";
+  ctx.fillText("nfluenc3.com",W-44,68);ctx.textAlign="left";
+
+  // Divider
+  ctx.strokeStyle="rgba(255,255,255,0.07)";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(44,106);ctx.lineTo(W-44,106);ctx.stroke();
+
+  // AVATAR
+  const ax=44,ay=126,ar=46;
+  if(_lastRaw.profile_image_url){
+    await new Promise(res=>{
+      const img=new Image();img.crossOrigin="anonymous";
+      img.onload=()=>{
+        ctx.save();ctx.beginPath();ctx.arc(ax+ar,ay+ar,ar,0,Math.PI*2);ctx.clip();
+        ctx.drawImage(img,ax,ay,ar*2,ar*2);ctx.restore();
+        ctx.strokeStyle="rgba(255,255,255,0.18)";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(ax+ar,ay+ar,ar+2,0,Math.PI*2);ctx.stroke();
+        res();
+      };img.onerror=res;img.src=_lastRaw.profile_image_url;
+    });
+  } else {
+    ctx.fillStyle=tc+"28";ctx.beginPath();ctx.arc(ax+ar,ay+ar,ar,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=tc;ctx.font="900 38px Inter,sans-serif";ctx.textAlign="center";
+    ctx.fillText(_lastHandle[0].toUpperCase(),ax+ar,ay+ar+14);ctx.textAlign="left";
+  }
+
+  // HANDLE
+  const tx=ax+ar*2+20;
+  ctx.fillStyle="rgba(74,222,128,0.7)";
+  ctx.beginPath();ctx.arc(tx+5,ay+12,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="600 10px monospace";
+  ctx.fillText("SCAN COMPLETE",tx+16,ay+16);
+  ctx.fillStyle="#fff";ctx.font="900 38px Inter,sans-serif";
+  ctx.fillText("@"+_lastHandle,tx,ay+58);
+  if(_lastRaw.display_name&&_lastRaw.display_name!==_lastHandle){
+    ctx.fillStyle="rgba(255,255,255,0.45)";ctx.font="600 17px Inter,sans-serif";
+    ctx.fillText(_lastRaw.display_name,tx,ay+82);
+  }
+  if(_lastRaw.description){
+    ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="400 13px Inter,sans-serif";
+    let bio=_lastRaw.description;if(bio.length>85)bio=bio.slice(0,85)+"…";
+    ctx.fillText(bio,tx,ay+106);
+  }
+
+  // TIER CIRCLE top right
+  const tcx=W-44-68,tcy=ay+50;
+  ctx.shadowColor=tc;ctx.shadowBlur=20;
+  ctx.strokeStyle=tc;ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.arc(tcx,tcy,58,0,Math.PI*2);ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle=tc;ctx.font="900 40px Inter,sans-serif";ctx.textAlign="center";
+  ctx.fillText(_lastScores.overall,tcx,tcy+15);
+  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="600 9px monospace";
+  ctx.fillText("NFLUENCE",tcx,tcy+32);ctx.textAlign="left";
+
+  // STATS ROW
+  const sy=292;
+  const stats=[
+    {l:"FOLLOWERS",v:fmtNum(_lastScores.followers)},
+    {l:"FOLLOWING",v:fmtNum(_lastScores.following)},
+    {l:"TWEETS",v:fmtNum(_lastScores.tweets)},
+    {l:"SORSA",v:_lastScores.sorsaScore},
+    {l:"TIER",v:tier.name},
+  ];
+  const sw2=(W-88)/stats.length;
+  stats.forEach((s,i)=>{
+    const sx2=44+i*sw2;
+    ctx.fillStyle="rgba(255,255,255,0.03)";
+    roundRect(ctx,sx2,sy,sw2-10,70,10);ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,0.07)";ctx.lineWidth=1;
+    roundRect(ctx,sx2,sy,sw2-10,70,10);ctx.stroke();
+    ctx.fillStyle=s.l==="TIER"?tc:"#fff";
+    ctx.font=(s.l==="TIER"?"800 17px":"800 22px")+" Inter,sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(s.v,sx2+(sw2-10)/2,sy+40);
+    ctx.fillStyle="rgba(255,255,255,0.22)";ctx.font="600 9px monospace";
+    ctx.fillText(s.l,sx2+(sw2-10)/2,sy+58);
+    ctx.textAlign="left";
+  });
+
+  // SCORE RING
+  const rx=136,ry=442,rr=78;
+  ctx.strokeStyle="rgba(255,255,255,0.06)";ctx.lineWidth=8;ctx.lineCap="round";
+  ctx.beginPath();ctx.arc(rx,ry,rr,0,Math.PI*2);ctx.stroke();
+  ctx.shadowColor=tc;ctx.shadowBlur=16;
+  ctx.strokeStyle=tc;ctx.lineWidth=8;
+  ctx.beginPath();ctx.arc(rx,ry,rr,-Math.PI/2,-Math.PI/2+(2*Math.PI*_lastScores.overall/100));ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle=tc;ctx.font="900 50px Inter,sans-serif";ctx.textAlign="center";
+  ctx.fillText(_lastScores.overall,rx,ry+18);
+  ctx.fillStyle="rgba(255,255,255,0.28)";ctx.font="500 11px monospace";
+  ctx.fillText("/ 100",rx,ry+38);ctx.textAlign="left";
+
+  // METRICS
+  const mKeys=[{k:"reach",l:"REACH"},{k:"engagement",l:"ENGAGEMENT"},{k:"authority",l:"AUTHORITY"},{k:"consistency",l:"CONSISTENCY"},{k:"virality",l:"VIRALITY"}];
+  const mStartX=268,mStartY=388,mGap=48;
+  const barMaxW=W-44-mStartX-160;
+  mKeys.forEach((m,i)=>{
+    const my=mStartY+i*mGap;
+    const val=_lastScores[m.k];
+    const mc=getColor(val);
+    ctx.fillStyle="rgba(255,255,255,0.4)";ctx.font="600 11px monospace";
+    ctx.fillText(m.l,mStartX,my);
+    // bar bg
+    ctx.fillStyle="rgba(255,255,255,0.05)";
+    roundRect(ctx,mStartX+140,my-13,barMaxW,5,3);ctx.fill();
+    // bar fill
+    ctx.shadowColor=mc;ctx.shadowBlur=6;
+    ctx.fillStyle=mc;
+    roundRect(ctx,mStartX+140,my-13,barMaxW*(val/100),5,3);ctx.fill();
+    ctx.shadowBlur=0;
+    // value
+    ctx.fillStyle=mc;ctx.font="800 15px Inter,sans-serif";ctx.textAlign="right";
+    ctx.fillText(val,W-44,my);ctx.textAlign="left";
+  });
+
+  // AI snippet
+  if(_lastAiText&&_lastAiText.length>10&&!_lastAiText.includes("analyzing")&&!_lastAiText.includes("could not")){
+    let snip=_lastAiText.replace(/\n/g," ");
+    if(snip.length>130)snip=snip.slice(0,130)+"…";
+    ctx.fillStyle="rgba(255,255,255,0.2)";ctx.font="400 12px monospace";
+    ctx.fillText("\u201c"+snip+"\u201d",44,626);
+  }
+
+  // Bottom bar
+  ctx.fillStyle="rgba(255,255,255,0.06)";ctx.fillRect(0,H-38,W,1);
+  ctx.fillStyle="rgba(255,255,255,0.18)";ctx.font="600 10px monospace";
+  ctx.fillText("NFLUENCE \u2014 WEB3 KOL MARKETING \u00B7 SCORE BY SORSA \u00B7 nfluenc3.com",44,H-13);
+
+  // Download
+  const link=document.createElement("a");
+  link.download=_lastHandle+"_nfluence_score.jpg";
+  link.href=cv.toDataURL("image/jpeg",0.95);
+  link.click();
+
+  dlBtn.disabled=false;
+  dlBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD SHARE CARD';
+}
+
 </script>
 </body>
 </html>
